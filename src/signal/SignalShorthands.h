@@ -516,6 +516,19 @@ inline mono decay( mono duration )
 }
 
 /**
+ * Slide between frequencies using a logarithmic midi-pitch scale
+ */
+inline mono pitch_slide( mono from, mono to, mono duration )
+{
+    return midiPitch( ramp( from, duration, to ) );
+}
+
+inline mono pitch_slide( double from, double to, double duration )
+{
+    return pitch_slide( constant( from ), constant( to ), constant( duration ) );
+}
+
+/**
  * Linear decay envelope (from 1.0 to 0.0) lasting `duration` seconds.
  */
 inline mono decay( double duration )

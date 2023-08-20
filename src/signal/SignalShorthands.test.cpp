@@ -246,6 +246,11 @@ TEST_CASE( "ramp as an envelope" )
     AUDIO_TEST( "440Hz Sine boop", sine( constant( 440 ) ) * ramp( 1, 1, 0 ), 1 );
 }
 
+TEST_CASE( "sliding between pitches" )
+{
+    AUDIO_TEST( "pitch slide 1", sine( pitch_slide( 10, 80, 1 ) ), 1 );
+}
+
 TEST_CASE( "Linear decay" )
 {
     AUDIO_TEST( "Sine with linear decay envelope on amplitude", sine( 100 ) * decay( 2 ), 2 );
