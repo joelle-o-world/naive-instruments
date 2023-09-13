@@ -336,6 +336,29 @@ public:
 };
 
 template <typename T>
+class WaitSilently : public Signal<T>
+{
+public:
+    int             waitTime;
+    SignalReader<T> input{ this };
+
+    WaitSilently( int countdown )
+    : waitTime( countdown )
+    {
+    }
+
+    void action()
+    {
+        if ( this->t > waitTime )
+            this->output = input[this->t - waitTime];
+        else
+        {
+            this->output = 0;
+        }
+    }
+};
+
+template <typename T>
 class Skip : public Signal<T>
 {
 public:
@@ -369,6 +392,31 @@ public:
     {
         if ( this->t < elapseTime )
             this->output = input[this->t];
+    }
+};
+
+/**
+ * Works like elapse but sets the output to `0` after a the elapsed duration.
+ */
+template <typename T>
+class Truncate : public Signal<T>
+{
+
+public:
+    int             durationInSamples;
+    SignalReader<T> input{ this };
+
+    Truncate( int durationInSamples )
+    : durationInSamples( durationInSamples )
+    {
+    }
+
+    void action() override
+    {
+        if ( this->t < durationInSamples )
+            this->output = input[this->t];
+        else
+            this->output = 0;
     }
 };
 

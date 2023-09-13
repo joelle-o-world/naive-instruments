@@ -175,11 +175,16 @@ TEST_CASE( "Waiting before starting a signal" )
     CHECK_FRAME( signal, 44100 * 1.5 + 1, -1 );
 }
 
+TEST_CASE( "inserting silence before the start of a signal" )
+{
+    CHECK_SIGNAL( wait_silently_frames( 4, t() ), { 0, 0, 0, 0, 0, 1, 2, 3, 4 } );
+}
+
 TEST_CASE( "Skipping the start of signals" )
 {
     CHECK_SIGNAL( skipSamples( 5, t() ), { 5, 6, 7, 8, 9, 10 } );
-
     CHECK_SIGNAL( skip( 1, t() ), { 44100, 44101, 44102, 44103, 44104, 44105 } );
+    CHECK_SIGNAL( skipSamples( 3, t() ), { 3, 4, 5, 6, 7, 8, 9 } );
 }
 
 TEST_CASE( "Elapsing a signal" )
@@ -191,6 +196,32 @@ TEST_CASE( "Slicing a signal" )
 {
     CHECK_SIGNAL( slice( t(), .01, .02 ), { 441, 442, 443 } );
 }
+
+/* TEST_CASE( "FREAKILY WORKSS??" ) */
+/* { */
+/*     const double smp = 1.0 / 44100.0; */
+/*     CHECK_SIGNAL( skipSamples( 3, t() ), { 3, 4, 5, 6, 7, 8, 9 } ); */
+/*     CHECK_SIGNAL( frame_region( t(), 5, 3, 4 ), { 0, 0, 0, 0, 0, 3, 4, 5, 6, 0, 0, 0, 0, 0 } ); */
+/*     /1* CHECK_SIGNAL( region( t(), 5 * smp, 3 * smp, 4 * smp ), { 0, 0, 0, 0, 0, 3, 4, 5, 6, 0, 0, 0, 0, 0 } ); *1/ */
+/* } */
+
+TEST_CASE( "Using signal regions" )
+{
+    const double smp = 1.0 / 44100.0;
+
+    CHECK_SIGNAL( frame_region( t(), 5, 3, 4 ), { 0, 0, 0, 0, 0, 3, 4, 5, 6, 0, 0, 0, 0, 0 } );
+    /* CHECK_SIGNAL( region( t(), 5 * smp, 3 * smp, 4 * smp ), { 0, 0, 0, 0, 0, 3, 4, 5, 6, 0, 0, 0, 0, 0 } ); */
+}
+
+TEST_CASE( "Constructing signal region using other bits" )
+{
+    /* CHECK_SIGNAL( skipSamples( 3, t() ), { 3, 4, 5, 6, 7, 8 } ); */
+    /* CHECK_SIGNAL( truncateFrames( skipSamples( 3, t() ), 4 ), { 3, 4, 5, 6, 0, 0 } ); */
+    CHECK_SIGNAL( wait_silently_frames( 5, skipSamples( 3, t() ) ), { 0, 0, 0, 0, 0, 3, 4, 5, 5, 7, 8, 9 } );
+    CHECK_SIGNAL( wait_silently_frames( 5, truncateFrames( skipSamples( 3, t() ), 4 ) ),
+                  { 0, 0, 0, 0, 0, 3, 4, 5, 6, 0, 0 } );
+}
+
 
 TEST_CASE( "Converting intervals to frequency ratios" )
 {

@@ -368,6 +368,7 @@ inline mono lfo( mono centre, mono range, mono frequency = constant( 5 ) )
  * `input` (from its beginning).
  */
 inline mono waitSamples( int waitTimeInSamples, mono input )
+// TODO: Fix argument order
 {
     auto signal   = std::make_shared<Wait<double>>( waitTimeInSamples );
     signal->input = input;
@@ -378,6 +379,7 @@ inline mono waitSamples( int waitTimeInSamples, mono input )
  * Create a signal which waits the given number of seconds before writing the
  * `input` (from its beginning).
  */
+// TODO: Fix argument order
 inline mono waitSeconds( double waitTimeInSeconds, mono input )
 {
     return waitSamples( waitTimeInSeconds * 44100, input );
@@ -387,14 +389,43 @@ inline mono waitSeconds( double waitTimeInSeconds, mono input )
  * Alias for wait seconds.
  */
 inline mono wait( double waitTimeInSeconds, mono input )
+// TODO: Fix argument order
 {
     return waitSeconds( waitTimeInSeconds, input );
 }
 
+/**
+ * Insert n frames of silence (`0`) before the given signal.
+ */
+inline mono wait_silently_frames( int waitTimeInFrames, mono input )
+{
+    auto signal   = std::make_shared<WaitSilently<double>>( waitTimeInFrames );
+    signal->input = input;
+    return signal;
+}
+
+// TODO: Fix argument order
+/**
+ * Insert n seconds of silence (`0` frames) before the given signal.
+ */
+inline mono wait_silently_seconds( double waitTimeInSeconds, mono input )
+{
+    return wait_silently_frames( waitTimeInSeconds * 44100, input );
+}
+
+// TODO: Fix argument order
+/**
+ * Insert n seconds of silence (`0` frames) before the given signal.
+ */
+inline mono wait_silently( double waitTimeInSeconds, mono input )
+{
+    return wait_silently_seconds( waitTimeInSeconds, input );
+}
 
 /**
  * Skip for first `skipTimeInSamples` samples of the `input` signal.
  */
+// TODO: Rename as skipFrames
 inline mono skipSamples( int skipTimeInSamples, mono input )
 {
     auto signal   = std::make_shared<Skip<double>>( skipTimeInSamples );
@@ -451,6 +482,32 @@ inline mono elapse( mono input, double duration )
 }
 
 /**
+ * Play the first n frames of a signal, then silence ofter that.
+ */
+inline mono truncateFrames( mono input, int durationInFrames )
+{
+    auto signal   = std::make_shared<Truncate<double>>( durationInFrames );
+    signal->input = input;
+    return signal;
+}
+
+/**
+ * Play the first few seconds of a signal, then silence ofter that.
+ */
+inline mono truncateSeconds( mono input, double durationInSeconds )
+{
+    return truncateFrames( input, 44100 * durationInSeconds );
+}
+
+/**
+ * Play the first few seconds of a signal, then silence ofter that.
+ */
+inline mono truncate( mono input, double durationInSeconds )
+{
+    return truncateSeconds( input, durationInSeconds );
+}
+
+/**
  * Play a portion of the `input` signal starting from `to` seconds, ending at
  * `from` seconds.
  */
@@ -458,6 +515,20 @@ inline mono slice( mono input, double from, double to )
 {
     // TODO: Could it handle negative duration?
     return elapse( skip( from, input ), to - from );
+}
+
+inline mono frame_region( mono input, int waitTimeInFrames, int skipTimeInFrames, int durationInFrames )
+{
+    return wait_silently_frames( waitTimeInFrames,
+                                 truncateFrames( skipSamples( skipTimeInFrames, input ), durationInFrames ) );
+}
+
+/**
+ * Analogous to a region in logic or ableton, delay a slice of another signal and end.
+ */
+inline mono region( mono input, double waitTimeInSeconds, double skipTimeInSeconds, double durationInSeconds )
+{
+    return wait_silently( waitTimeInSeconds, truncate( skip( skipTimeInSeconds, input ), durationInSeconds ) );
 }
 
 /**
