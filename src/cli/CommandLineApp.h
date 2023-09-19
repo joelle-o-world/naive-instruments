@@ -48,17 +48,17 @@ public:
         if ( args.exists( "input" ) )
         {
             const auto filename = args["input"];
-            return WavReader::readMonoFile( filename );
+            return NaiveInstruments::WavReader::readMonoFile( filename.c_str() );
         }
         else if ( stdinIsAPipe() )
         {
-            return WavReader::readStream( &std::cin );
+            return NaiveInstruments::WavReader::readStdin();
         }
         else
         {
             // TODO: implement some kind of array shifting with positional arguments
             const auto filename = args[0];
-            return WavReader::readMonoFile( filename );
+            return NaiveInstruments::WavReader::readMonoFile( filename.c_str() );
         }
     }
 

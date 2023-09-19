@@ -3,6 +3,7 @@
 #include "../core/MonoBuffer.h"
 #include "./Signal.h"
 #include <algorithm>
+#include <memory>
 #include <vector>
 
 namespace NaiveInstruments
@@ -253,11 +254,11 @@ class Sampler : public Signal<double>
     // TODO: Refactor this class, its been lazily adapted from the old version
 
     // TODO: should this really be a c ptr?
-    MonoBuffer* buffer;
-    int         playhead = 0;
+    std::shared_ptr<MonoBuffer> buffer;
+    int                         playhead = 0;
 
 public:
-    Sampler( MonoBuffer* sharedBuffer )
+    Sampler( std::shared_ptr<MonoBuffer> sharedBuffer )
     {
         buffer = sharedBuffer;
     }
@@ -296,6 +297,7 @@ public:
 
     SignalReader<double> phase{ this };
 
+    // TODO: Use a smart pointer
     Wavetable( MonoBuffer* buffer )
     : buffer( buffer )
 

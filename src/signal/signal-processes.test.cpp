@@ -21,7 +21,7 @@ TEST_CASE( "Creating a vector signal" )
 
 TEST_CASE( "signals all have the expected number of inputs" )
 {
-    auto exampleBuffer = new MonoBuffer( 10 );
+    auto exampleBuffer = std::make_shared<MonoBuffer>( 10 );
     REQUIRE( USaw().inputs.size() == 1 );
     REQUIRE( Sum<double>().inputs.size() == 2 );
     REQUIRE( Subtract<double>().inputs.size() == 2 );
@@ -39,13 +39,12 @@ TEST_CASE( "signals all have the expected number of inputs" )
     /* REQUIRE( VectorSignal<double>( {} ).inputs.size() == 0 ); */
 
     REQUIRE( Sampler( exampleBuffer ).inputs.size() == 0 );
-    REQUIRE( Wavetable( exampleBuffer ).inputs.size() == 1 );
+    REQUIRE( Wavetable( &*exampleBuffer ).inputs.size() == 1 );
     REQUIRE( Wait<double>( 44100 ).inputs.size() == 1 );
     REQUIRE( Skip<double>( 44100 ).inputs.size() == 1 );
     REQUIRE( IntervalToRatio().inputs.size() == 1 );
     REQUIRE( BufferLooper( 44100 ).inputs.size() == 1 );
     REQUIRE( HardClip<double>().inputs.size() == 1 );
-    delete exampleBuffer;
 }
 
 TEST_CASE( "Creating a stereo vector signal" )
@@ -66,14 +65,15 @@ TEST_CASE( "Creating a stereo vector signal" )
 
 TEST_CASE( "Creating a Sampler using a contrived MonoBuffer" )
 {
-    MonoBuffer buffer( 10 );
-    buffer[0] = 5;
-    buffer[1] = 4;
-    buffer[2] = 3;
-    buffer[3] = 2;
-    buffer[4] = 1;
+    auto        bufferptr = std::make_shared<MonoBuffer>( 10 );
+    MonoBuffer& buffer    = *bufferptr;
+    buffer[0]             = 5;
+    buffer[1]             = 4;
+    buffer[2]             = 3;
+    buffer[3]             = 2;
+    buffer[4]             = 1;
 
-    std::shared_ptr<Signal<double>> sampler = std::make_shared<NaiveInstruments::Sampler>( &buffer );
+    std::shared_ptr<Signal<double>> sampler = std::make_shared<NaiveInstruments::Sampler>( bufferptr );
     CHECK_SIGNAL( sampler, { 5, 4, 3, 2, 1 } );
 }
 

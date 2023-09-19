@@ -89,11 +89,11 @@ protected:
         if ( args.count( "input" ) )
         {
             const std::string filename = args["input"].as<std::string>();
-            return WavReader::readMonoFile( filename );
+            return NaiveInstruments::WavReader::readMonoFile( filename.c_str() );
         }
         else if ( stdinIsAPipe() )
         {
-            return WavReader::readStream( &std::cin );
+            return NaiveInstruments::WavReader::readStdin();
         }
         else
         {

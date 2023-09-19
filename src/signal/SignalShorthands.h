@@ -252,11 +252,12 @@ inline mono noise( uint64_t seed = 1 )
 /**
  * Create a sampler playing the given MonoBuffer sample.
  */
-inline mono sampler( MonoBuffer* buffer )
+inline mono sampler( std::shared_ptr<MonoBuffer> buffer )
 {
     // TODO: How do we feel about the raw pointer here?
     return std::make_shared<NaiveInstruments::Sampler>( buffer );
 }
+
 
 /**
  * Create a wavetable using the given `buffer` as a wavetable. The `phase`

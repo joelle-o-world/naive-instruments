@@ -21,7 +21,7 @@ public:
         initscr();
         mouseinterval( 0 );
         mousemask( BUTTON1_CLICKED | BUTTON4_PRESSED | BUTTON2_PRESSED, NULL );
-        MonoBuffer& sample = *WavReader::readMonoFile( args[0] );
+        MonoBuffer& sample = *NaiveInstruments::WavReader::readMonoFile( args[0].c_str() );
 
         double from = 0;
         double to   = sample.duration();
@@ -30,7 +30,7 @@ public:
         BufferedPlayback playback;
         playback.start( true );
 
-        WavReader file( args[0] );
+        NaiveInstruments::WavReader file( args[0].c_str() );
         while ( true )
         {
             int c = getch();

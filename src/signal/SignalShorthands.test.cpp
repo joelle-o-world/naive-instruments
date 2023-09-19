@@ -3,6 +3,7 @@
 #include "../test-framework/custom-assertions.h"
 #include "Signal.h"
 #include <iostream>
+#include <memory>
 #include <string>
 
 using namespace NaiveInstruments::SignalShorthands;
@@ -97,15 +98,23 @@ TEST_CASE( "dividing a constant by a signal" )
 
 TEST_CASE( "Creating a sampler with a contrived buffer using a shorthand" )
 {
-    MonoBuffer buffer( 10 );
-    buffer[0] = 5;
-    buffer[1] = 4;
-    buffer[2] = 3;
-    buffer[3] = 2;
-    buffer[4] = 1;
+    auto        bufferptr = std::make_shared<MonoBuffer>( 10 );
+    MonoBuffer& buffer    = *bufferptr;
+    buffer[0]             = 5;
+    buffer[1]             = 4;
+    buffer[2]             = 3;
+    buffer[3]             = 2;
+    buffer[4]             = 1;
 
-    auto signal = sampler( &buffer );
+    auto signal = sampler( bufferptr );
     CHECK_SIGNAL( signal, { 5, 4, 3, 2, 1 } );
+}
+
+TEST_CASE( "Creating a sampler using an audio file" )
+{
+    auto buffer = NaiveInstruments::WavReader::readMonoFile( "audio-source-files/piano.wav" );
+    auto signal = sampler( buffer );
+    referenceToneTest( "piano sample", signal, 1 );
 }
 
 TEST_CASE( "unsigned sawtooth waves" )

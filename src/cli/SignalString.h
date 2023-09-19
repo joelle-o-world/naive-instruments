@@ -19,7 +19,7 @@ public:
         if ( std::regex_search( str, wavFileRegex ) )
         {
             std::cerr << "SAMPLE: " << str << "\n";
-            return make_shared<Sampler>( WavReader::readMonoFile( str ) );
+            return make_shared<Sampler>( NaiveInstruments::WavReader::readMonoFile( str.c_str() ) );
         }
 
         // TODO: use empty shared_ptr for failure?

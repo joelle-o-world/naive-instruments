@@ -14,16 +14,16 @@ public:
                           double                        from = 0,
                           double                        to   = 0 )
     {
-        WavReader file( filePath );
-        int       width  = canvas.width;
-        int       height = canvas.height;
+        NaiveInstruments::WavReader file( filePath.c_str() );
+        int                         width  = canvas.width;
+        int                         height = canvas.height;
 
         if ( to == 0 )
             to = file.duration();
         int fromSample = from * sampleRate;
         int toSample   = to * sampleRate;
 
-        Sampler sampler( WavReader::readMonoFile( filePath ) );
+        Sampler sampler( NaiveInstruments::WavReader::readMonoFile( filePath.c_str() ) );
         sampler.skipTo( fromSample );
 
         RMS loudness;

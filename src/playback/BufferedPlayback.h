@@ -240,17 +240,17 @@ public:
         playback.start( false );
     }
 
-    static void play( MonoBuffer& audio )
+    static void play( std::shared_ptr<MonoBuffer> audio )
     {
-        play( NaiveInstruments::SignalShorthands::sampler( &audio ) );
+        play( NaiveInstruments::SignalShorthands::sampler( audio ) );
     }
 
     void setSignal( mono sound )
     {
         signal = sound;
     }
-    void setSignal( MonoBuffer& sample )
+    void setSignal( std::shared_ptr<MonoBuffer> sample )
     {
-        setSignal( NaiveInstruments::SignalShorthands::sampler( &sample ) );
+        setSignal( NaiveInstruments::SignalShorthands::sampler( sample ) );
     }
 };

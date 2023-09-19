@@ -1,123 +1,133 @@
 #pragma once
 
-#include "WAV_HEADER.h"
-#include <fstream>
 #include <iostream>
 #include <memory>
+#include <sndfile.h>
 #include <string>
 
-#include "../core.h"
+#include "../core/MonoBuffer.h"
+#include "../signal/Signal.h"
 
-typedef struct
+
+namespace NaiveInstruments
 {
-    double left;
-    double right;
-} StereoFrame;
 
 class WavReader
 {
-    std::istream* in;
 
-private:
-    WAV_HEADER header;
-    void       readHeader()
-    {
-        // TODO: How to detect failure?
-        in->read( reinterpret_cast<char*>( &header ), sizeof( header ) );
+    const char* filepath;
+    SNDFILE*    file;
+    SF_INFO     info;
 
-        assertStandardCDAudio();
-    }
-
-    void assertStandardCDAudio()
-    {
-        assert( header.AudioFormat == 1 );
-        assert( header.Subchunk1Size == 16 );
-        assert( header.Subchunk2ID[0] == 'd' );
-        assert( header.Subchunk2ID[1] == 'a' );
-        assert( header.Subchunk2ID[2] == 't' );
-        assert( header.Subchunk2ID[3] == 'a' );
-        assert( header.bitsPerSample == 16 );
-    }
-
-    int numberOfChannels()
-    {
-        return header.NumOfChan;
-    }
+    int framesRead;
 
 public:
-    WavReader( const std::string& filePath )
-    : in( new std::ifstream( filePath, std::ios::binary ) )
+    /// Read the given file path as a wav file
+    WavReader( const char* filepath )
+    : filepath( filepath )
     {
-        // TODO: Check the file exists
-        readHeader();
+        file = sf_open( filepath, SFM_READ, &info );
+        checkFile();
     }
 
-    WavReader( std::istream* inputStream )
-    : in( inputStream )
+    WavReader( FILE* fileStream )
     {
-        readHeader();
+        int fileDescriptor = fileno( fileStream );
+        file               = sf_open_fd( fileDescriptor, SFM_READ, &info, 0 );
+        checkFile();
     }
 
-    StereoFrame readNextFrame()
+private:
+    void checkFile()
     {
-        if ( numberOfChannels() == 2 )
+        if ( !file )
         {
-            int16_t l16bit, r16bit;
-            in->read( reinterpret_cast<char*>( &l16bit ), sizeof( l16bit ) );
-            in->read( reinterpret_cast<char*>( &r16bit ), sizeof( r16bit ) );
-            return { int16ToDouble( l16bit ), int16ToDouble( r16bit ) };
-        }
-        else if ( numberOfChannels() == 1 )
-        {
-            int16_t sig16bit;
-            in->read( reinterpret_cast<char*>( &sig16bit ), sizeof( sig16bit ) );
-            double signal = int16ToDouble( sig16bit );
-            return { signal, signal };
-        }
-        else
-        {
-            std::cerr << "Expected mono or stereo audio, got " << numberOfChannels() << " channels\n";
+            std::cerr << "Something went wrong opening file " << filepath << "\n";
+            // TODO: Use proper exceptions
             throw 1;
         }
     }
 
-private:
-    double int16ToDouble( int16_t x )
+    // TODO: Constructor for STDIN
+
+
+    // TODO: Use some kind of buffering mechanism. Reading 1 frame at a time is inefficient
+    /// return 1 frame of the signal as a stereo frame
+    StereoFrame readNextFrame()
     {
-        return double( x ) / ( INT16_MAX * .5 );
+        if ( numberOfChannels() == 1 )
+        {
+            double data[1];
+            sf_read_double( file, data, 1 );
+            ++framesRead;
+            return { data[0], data[0] };
+        }
+        else if ( numberOfChannels() == 2 )
+        {
+            double data[2];
+            sf_read_double( file, data, 2 );
+            ++framesRead;
+            return { data[0], data[1] };
+        }
+        else
+        {
+            std::cerr << "Problem reading a data from " << filepath << "\n";
+            // TODO: Use proper exceptions
+            throw 1;
+        }
     }
+
 
 public:
+    /// Get the sample rate of the audio file
     int sampleRate()
     {
-        return header.SamplesPerSec;
+        return info.samplerate;
     }
+
+    /// Count the frames in the audio file
     int numberOfFrames()
     {
-        return header.Subchunk2Size / ( numberOfChannels() * sizeof( int16_t ) );
+        return info.frames;
     }
+
+    int numberOfChannels()
+    {
+        return info.channels;
+    }
+
+    int numberOfFramesRemaining()
+    {
+        return numberOfFrames() - framesRead;
+    }
+
+    /// Get the duration of the audio file in seconds
     float duration()
     {
-        return float( numberOfFrames() ) / float( sampleRate() );
+        return numberOfFrames() / float( sampleRate() );
     }
 
-    static std::shared_ptr<MonoBuffer> readMonoFile( const std::string& filePath )
+    /// Read an entire file into memory
+    static std::shared_ptr<MonoBuffer> readMonoFile( const char* filepath )
     {
-        std::ifstream* inputStream = new std::ifstream( filePath, std::ios::binary );
-        return readStream( inputStream );
+        return WavReader( filepath ).readMonoBuffer();
     }
 
-    static std::shared_ptr<MonoBuffer> readStream( std::istream* inputStream )
-    {
-        WavReader file( inputStream );
-        int       numberOfFrames = file.numberOfFrames();
-        auto      buffer         = std::make_shared<MonoBuffer>( numberOfFrames );
-        for ( int i = 0; i < numberOfFrames; ++i )
-        {
-            double y       = file.readNextFrame().left;
-            ( *buffer )[i] = y;
-        }
 
+    // TODO: static method to read stdin into memory as MonoBuffer ptr
+    static std::shared_ptr<MonoBuffer> readStdin()
+    {
+        return WavReader( stdin ).readMonoBuffer();
+    }
+
+private:
+    std::shared_ptr<MonoBuffer> readMonoBuffer()
+    {
+        auto buffer = std::make_shared<MonoBuffer>( numberOfFramesRemaining() );
+        for ( int i = 0; i < numberOfFrames(); ++i )
+            ( *buffer )[i] = readNextFrame().left;
         return buffer;
     }
 };
+
+} // namespace NaiveInstruments

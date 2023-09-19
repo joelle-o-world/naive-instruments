@@ -47,7 +47,7 @@ public:
 
     static MonoBuffer& fromFile( const std::string& filePath )
     {
-        return *WavReader::readMonoFile( filePath );
+        return *NaiveInstruments::WavReader::readMonoFile( filePath.c_str() );
     }
 
     static MonoBuffer& Malcolm01()
