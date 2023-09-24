@@ -43,6 +43,7 @@ inline mono t()
     return std::make_shared<Clock<double>>();
 }
 
+
 /**
  * Create a `USaw` unsigned sawtooth wave signal with the given `frequency`.
  * Slides from 0 to 1 `frequency` times per second.
@@ -805,6 +806,18 @@ inline mono right( stereo input )
     auto signal   = std::make_shared<SelectRightChannel>();
     signal->input = input;
     return signal;
+}
+
+inline mono drift( mono driftPerSecond )
+{
+    auto signal   = std::make_shared<Accumulator>();
+    signal->input = driftPerSecond / constant( 44100 );
+    return signal;
+}
+
+inline mono drift( double driftPerSecond )
+{
+    return drift( constant( driftPerSecond ) );
 }
 
 // TODO: ratioToInterval

@@ -63,6 +63,29 @@ public:
             return signal / count;
         };
         map["worm_frequency"] = [this]() { return midiPitch( 50 + 30 * create( "worm" ) ); };
+
+
+        map["kick_envelope"] = [this]() {
+            double settle       = random( 40, 60 );
+            mono   settle_drift = random.boolean( .5 ) ? interval( drift( random( -6, 6 ) ) ) : constant( 1 );
+
+            auto attack =
+                random.boolean( .5 ) ? interval( noise() * ramp( random( 64 ), random( .25 ), 0 ) ) : constant( 1 );
+            auto sweep = ramp( random( 8, 32 ), random( .05 ), 1 );
+            return settle * settle_drift * sweep * attack;
+        };
+
+        map["kick"] = [this]() { return sine( create( "kick_envelope" ) * decay( 2 ) ); };
+
+        map["4floor_kick"] = [this] {
+            double bpm = 139;
+            return step_sequence( 139, { create( "kick" ) } );
+        };
+
+        map["alternating_4floor_kick"] = [this] {
+            double bpm = 139;
+            return step_sequence( 139, { create( "kick" ), create( "kick" ) } );
+        };
     }
 
     std::shared_ptr<NaiveInstruments::Signal<double>> create( std::string shorthand )
