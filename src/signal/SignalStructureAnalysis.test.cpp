@@ -18,6 +18,6 @@ TEST_CASE( "Generating a structure string for a signal with feedback" )
     auto osc           = usaw( 30 );
     osc->frequency     = 150 + 100 * osc;
     auto        signal = sineWavetable( osc );
-    std::string graph  = SignalStructureAnalysis::signalGraphStructureString( signal );
+    std::string graph  = SignalStructureAnalysis::signalGraphStructureString( signal + 2 );
     std::cerr << "GRAPH:\n" << graph << "\n";
 }

@@ -4,6 +4,7 @@
 #include "./Constructors.h"
 #include "NodeGraph.h"
 #include "Signal.h"
+#include <map>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -44,13 +45,9 @@ public:
      */
     class NodeGraphExtracter
     {
-        /**
-         * These breadcrumb pointers are used to circuit break when analyising signals that contain feedback
-         */
+        /// These breadcrumb pointers are used to circuit break when analyising
+        /// signals that contain feedback
         Breadcrumbs<UnknownOutputSignal> breadcrumbs;
-
-        // TODO: there could be a separate class `Breadcrumbs<UnknownOutputSignal>` to make this behaviour a bit more
-        // standard
 
     public:
         std::shared_ptr<UnknownOutputSignal> startingPoint;
@@ -64,25 +61,42 @@ public:
             return extractNodeGraph( startingPoint );
         }
 
-        std::shared_ptr<NodeGraph> extractNodeGraph( std::shared_ptr<UnknownOutputSignal> signal )
+        std::map<UnknownOutputSignal*, NodeGraph*> map;
+
+        std::shared_ptr<NodeGraph> extractNodeGraph(
+            std::shared_ptr<UnknownOutputSignal> signal,
+            std::shared_ptr<NodeGraph>           usingNode = std::make_shared<NodeGraph>() )
         {
 
             // Check for for feedback
             if ( breadcrumbs.crumb( signal ) )
-                return std::make_shared<NodeGraph>( "FEEDBACK" );
+            {
+                auto other      = map[signal.get()];
+                usingNode->head = NodeGraph::relativePath( usingNode.get(), other );
+                return usingNode;
+            }
+            else
+            {
+                map[signal.get()] = usingNode.get();
+            }
 
             // Handle constants as a special case
             if ( isConstant( signal ) )
-                return std::make_shared<NodeGraph>( stringifyConstant( signal ) );
-
-            // Default handling
-            auto node = std::make_shared<NodeGraph>( signalProcessName( signal ) );
-            for ( auto input : signal->inputs )
             {
-                auto subNode = extractNodeGraph( input->abstract_ptr() );
-                node->addInput( subNode );
+                usingNode->head = stringifyConstant( signal );
+                return usingNode;
             }
-            return node;
+            else
+            {
+                // Default handling
+                usingNode->head = signalProcessName( signal );
+                for ( auto input : signal->inputs )
+                {
+                    auto childNode = usingNode->addInput();
+                    extractNodeGraph( input->abstract_ptr(), childNode );
+                }
+                return usingNode;
+            }
         }
     };
 

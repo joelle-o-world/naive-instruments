@@ -10,22 +10,28 @@
  */
 class NodeGraph
 {
-protected:
     /** The name of the node */
-    const std::string head;
+public:
+    std::string head;
 
+protected:
     std::vector<std::shared_ptr<NodeGraph>> inputs;
 
+    NodeGraph* parent = nullptr;
+
 public:
-    NodeGraph( std::string head )
+    NodeGraph( std::string head = "unnamed node" )
     : head( head )
     {
     }
 
-    void addInput( std::shared_ptr<NodeGraph> input )
+    std::shared_ptr<NodeGraph> addInput( std::shared_ptr<NodeGraph> input = std::make_shared<NodeGraph>() )
     {
         inputs.push_back( input );
+        input->parent = this;
+        return input;
     }
+
 
     std::string toString()
     {
@@ -77,5 +83,70 @@ private:
     }
 
 
+    // TODO: Move all the path stuff into a separate class
+public:
+    std::vector<NodeGraph*> backtrace()
+    {
+        std::vector<NodeGraph*> trace;
+        NodeGraph*              ptr = this;
+        while ( ptr )
+        {
+            trace.push_back( ptr );
+            ptr = ptr->parent;
+        }
+        return trace;
+    }
+
+    std::string absolutePath()
+    {
+        std::stringstream str;
+        str << "~";
+        auto bt = backtrace();
+        str << pathifyBacktrace( bt );
+        return str.str();
+    }
+
+    static std::string pathifyBacktrace( std::vector<NodeGraph*> bt )
+    {
+        std::stringstream str;
+        for ( int i = bt.size() - 1; i > 0; --i )
+        {
+            auto P = bt[i], C = bt[i - 1];
+            int  j = 0;
+            while ( j < P->inputs.size() && P->inputs[j].get() != C )
+                ++j;
+            str << "/" << j;
+        }
+
+        return str.str();
+    }
+
+    static std::string relativePath( NodeGraph* from, NodeGraph* to )
+    {
+        std::vector<NodeGraph*> fromBt = from->backtrace(), toBt = to->backtrace();
+
+        if ( fromBt[fromBt.size() - 1] != toBt[toBt.size() - 1] )
+            // TODO: Use proper exceptions
+            throw 1;
+
+        // Remove the shared root of the backtraces
+        while ( fromBt[fromBt.size() - 1] == toBt[toBt.size() - 1] )
+        {
+            fromBt.pop_back();
+            toBt.pop_back();
+        }
+
+        std::stringstream str;
+        for ( int i = 0; i < fromBt.size(); ++i )
+        {
+            if ( i != 0 )
+                str << "/";
+            str << "..";
+        }
+
+        str << pathifyBacktrace( toBt );
+
+        return str.str();
+    }
     // TODO: add parsing methods
 };
